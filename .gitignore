@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+components.json
+node_modules/
+.vercel/
+err.log
+out.log
