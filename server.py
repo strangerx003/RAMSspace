@@ -1,7 +1,7 @@
 """
 RBD Analyzer — Backend
 All reliability calculations happen here.
-Component data stored server-side (JSON file).
+Component data stored in-memory (with file fallback for local dev).
 """
 import math, os, json
 from flask import Flask, request, jsonify, Response
@@ -9,16 +9,29 @@ from flask import Flask, request, jsonify, Response
 app = Flask(__name__)
 
 COMP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "components.json")
+_in_memory_store = []
 
 def load_components():
+    global _in_memory_store
+    if _in_memory_store:
+        return list(_in_memory_store)
     if os.path.exists(COMP_FILE):
-        with open(COMP_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(COMP_FILE, "r", encoding="utf-8") as f:
+                _in_memory_store = json.load(f)
+                return list(_in_memory_store)
+        except Exception:
+            pass
     return []
 
 def save_components(data):
-    with open(COMP_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+    global _in_memory_store
+    _in_memory_store = list(data)
+    try:
+        with open(COMP_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
 
 
 # ══════════════════════════════════════════════════════════════════════
