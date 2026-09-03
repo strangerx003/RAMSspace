@@ -8,3 +8,6 @@ err.log
 out.log
 
 .vercel
+.env*
+.vercel/ 
+.env.local 
