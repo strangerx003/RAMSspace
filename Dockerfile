@@ -1,7 +1,40 @@
-FROM python:3.11-slim
+# RAMSspace — single-server Next.js (frontend + API in one process)
+# Build:  docker build -t ramsspace .
+# Run:    docker run --name ramsspace -p 3000:3000 ramsspace
+
+# ── Stage 1: install dependencies ──
+FROM node:20-slim AS deps
+WORKDIR /app/RAMspace_Base_UI
+COPY RAMspace_Base_UI/package.json RAMspace_Base_UI/package-lock.json ./
+RUN npm ci --omit=dev
+
+# ── Stage 2: build ──
+FROM node:20-slim AS builder
+WORKDIR /app/RAMspace_Base_UI
+COPY --from=deps /app/RAMspace_Base_UI/node_modules ./node_modules
+COPY RAMspace_Base_UI/ ./
+RUN npm run build
+
+# ── Stage 3: minimal runtime ──
+FROM node:20-slim AS runner
+LABEL project="RAMSspace"
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-EXPOSE 5000
-CMD ["python", "server.py"]
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy standalone bundle + static assets + public
+COPY --from=builder /app/RAMspace_Base_UI/.next/standalone ./
+COPY --from=builder /app/RAMspace_Base_UI/.next/static ./.next/static
+COPY --from=builder /app/RAMspace_Base_UI/public ./public
+
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://localhost:3000').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"
+CMD ["node", "server.js"]
