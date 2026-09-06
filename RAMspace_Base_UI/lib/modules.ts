@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import DataRegister from "@/components/DataRegister";
 import RBDSheet from "@/components/RBDSheet";
+import FTASheet from "@/components/FTASheet";
 
 /* ─────────────────────────────────────────────────────────────
  *  Module Registry — the single place to manage modules.
@@ -109,7 +110,8 @@ export const modules: ModuleDef[] = [
     label: "Fault Tree Analysis",
     shortLabel: "FTA",
     icon: Network,
-    description: "Top-down failure analysis",
+    description: "IEC 61025 fault tree with MIL-STD-882E risk assessment",
+    component: FTASheet,
   },
   {
     key: "ram-monitoring",

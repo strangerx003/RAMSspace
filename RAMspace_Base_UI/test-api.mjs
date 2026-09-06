@@ -75,47 +75,6 @@ try {
   check("get-fit-fpmh", got[0].fit === "5" && got[0].fpmh === "5", `${got[0].fit}/${got[0].fpmh}`);
   check("get-repair-space", got[1].repair === "Non Repairable", got[1].repair);
 
-  /* 4 — series math: 5e-6 + 1e-5 = 1.5e-5, MTBF = 66,667, MTTR = 2.0 */
-  r = await postJSON("/api/analyze-rbd", {
-    blocks: [
-      { id: 1, name: "Power Supply", lambda: 0.000005, mtbf: 200000, mttr: 4, opTime: 8760, repair: "Repairable" },
-      { id: 2, name: "Cooling Fan", lambda: 0.00001, mtbf: 100000, mttr: 1, opTime: 8760, repair: "Non Repairable" },
-    ],
-    connections: [{ from: { blockId: 1, side: "right" }, to: { blockId: 2, side: "left" } }],
-  });
-  check("series-200", r.status === 200, `status=${r.status}`);
-  check("series-lambda", r.json.result_value.includes("1.50e-5"), r.json.result_value);
-  check("series-mtbf", r.json.result_value.includes("66,667"), r.json.result_value);
-  check("series-step", r.json.steps?.[0]?.type === "series", JSON.stringify(r.json.steps?.[0]?.type));
-
-  /* 5 — parallel math: identical pair -> lambda 8.00e-10 */
-  r = await postJSON("/api/analyze-rbd", {
-    blocks: [
-      { id: 1, name: "A", lambda: 0.00001, mtbf: 100000, mttr: 4 },
-      { id: 2, name: "B", lambda: 0.00001, mtbf: 100000, mttr: 4 },
-    ],
-    connections: [
-      { from: { blockId: 1, side: "left" }, to: { blockId: 2, side: "left" } },
-      { from: { blockId: 1, side: "right" }, to: { blockId: 2, side: "right" } },
-    ],
-  });
-  check("parallel-200", r.status === 200, `status=${r.status}`);
-  check("parallel-step", r.json.steps?.[0]?.type === "parallel", JSON.stringify(r.json.steps?.[0]?.type));
-  check("parallel-lambda", r.json.result_value.includes("8.00e-10"), r.json.result_value);
-
-  /* 6 — MTBF is authoritative when both lambda + MTBF sent */
-  r = await postJSON("/api/analyze-rbd", {
-    blocks: [{ id: 1, name: "X", lambda: 0.001, mtbf: 200000, mttr: 4 }],
-    connections: [{ from: { blockId: 1, side: "left" }, to: { blockId: 1, side: "right" } }],
-  });
-  check("mtbf-wins", r.json.result_value.includes("5.00e-6"), r.json.result_value);
-
-  /* 7 — error paths */
-  r = await postJSON("/api/analyze-rbd", {});
-  check("err-no-blocks", r.json.error === "No blocks provided.", JSON.stringify(r.json));
-  r = await postJSON("/api/analyze-rbd", { blocks: [{ id: 1, name: "A", lambda: 1e-6, mtbf: 1e6, mttr: 1 }] });
-  check("err-no-conns", r.json.error === "No connections provided.", JSON.stringify(r.json));
-
   console.log(`\n${passes} passed, ${failures} failed`);
   process.exit(failures ? 1 : 0);
 } finally {

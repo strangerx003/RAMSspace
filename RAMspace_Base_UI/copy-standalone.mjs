@@ -11,9 +11,3 @@ if (existsSync(".next/static")) {
 } else {
   console.log("standalone: WARNING .next/static missing");
 }
-
-if (existsSync("public")) {
-  mkdirSync(".next/standalone/public", { recursive: true });
-  cpSync("public", ".next/standalone/public", { recursive: true });
-  console.log("standalone: public copied");
-}

@@ -78,7 +78,8 @@ try {
     }
   })(".next/static");
   for (const s of ["Reasoning", "rbd-block", "rbd-port", "Click a port", "Drag blocks",
-    "Straight", "Elbow", "Straight connector", "Elbow (right-angle) connector", "Analyzing"])
+    "Straight", "Elbow", "Straight connector", "Elbow (right-angle) connector", "Analyzing",
+    "Formulas", "Groups", "Reset", "Series (1oo1)", "failures/hr", "Copied"])
     check(`rbd-bundle:${s}`, bundle.includes(s));
 
   /* Static assets must load with 200 or the page renders unstyled */
